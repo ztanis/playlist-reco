@@ -1,0 +1,101 @@
+.playlist-generator {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.generator-form {
+  background-color: #282c34;
+  padding: 30px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 1.2em;
+  color: white;
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background-color: #1E1E1E;
+  color: white;
+  font-size: 1em;
+  resize: vertical;
+}
+
+.generate-button {
+  background-color: #1DB954;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+  font-weight: bold;
+}
+
+.generate-button:hover {
+  background-color: #1ed760;
+  transform: scale(1.05);
+}
+
+.generate-button:disabled {
+  background-color: #1DB954;
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tracks-list {
+  margin-top: 40px;
+}
+
+.tracks-list h2 {
+  color: white;
+  margin-bottom: 20px;
+  font-size: 1.8em;
+}
+
+.tracks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.track-card {
+  background-color: #282c34;
+  padding: 20px;
+  border-radius: 10px;
+  transition: transform 0.2s;
+}
+
+.track-card:hover {
+  transform: translateY(-5px);
+}
+
+.track-card h3 {
+  color: white;
+  margin: 0 0 10px 0;
+  font-size: 1.2em;
+}
+
+.artist-name {
+  color: #888;
+  margin: 0 0 15px 0;
+}
+
+.track-preview {
+  width: 100%;
+  margin-top: 10px;
+} 

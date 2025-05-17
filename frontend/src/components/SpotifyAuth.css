@@ -1,0 +1,46 @@
+.spotify-auth {
+    background-color: #1E1E1E;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    margin: 20px auto;
+    max-width: 400px;
+}
+
+.spotify-auth h2 {
+    color: white;
+    margin-bottom: 15px;
+}
+
+.spotify-auth p {
+    color: #888;
+    margin-bottom: 25px;
+}
+
+.spotify-auth-button {
+    display: inline-block;
+    background-color: #1DB954;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.spotify-auth-button:hover {
+    background-color: #1ed760;
+    transform: scale(1.05);
+}
+
+.spotify-auth-loading {
+    text-align: center;
+    color: #888;
+    margin: 40px 0;
+}
+
+.spotify-auth-error {
+    text-align: center;
+    color: #F44336;
+    margin: 40px 0;
+} 

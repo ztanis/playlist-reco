@@ -10,7 +10,7 @@ icon = "🎧"
 
 [[pages]]
 path = "pages/saved_artists.py"
-name = "Saved Artists"
+name = "Artists"
 icon = "📋"
 
 [[pages]]

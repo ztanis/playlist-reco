@@ -1,138 +1,146 @@
-# Playlist Recommender
+# Artist Ranking App
 
-A Streamlit application for music playlist recommendations.
+A web application for ranking your favorite artists, built with React and FastAPI.
 
-## Running with Docker (macOS)
+## Project Structure
 
-1. Make sure you have Docker installed on your Mac. You can download it from [Docker's official website](https://www.docker.com/products/docker-desktop).
+```
+.
+├── backend/           # FastAPI backend
+│   ├── main.py       # Main FastAPI application
+│   ├── Dockerfile    # Backend Docker configuration
+│   └── requirements.txt
+├── frontend/         # React frontend
+│   ├── src/
+│   │   ├── components/
+│   │   ├── App.tsx
+│   │   └── ...
+│   ├── Dockerfile    # Frontend Docker configuration
+│   ├── nginx.conf    # Nginx configuration
+│   └── package.json
+└── docker-compose.yml
+```
 
-2. Open Terminal and navigate to the project directory:
-   ```bash
-   cd /path/to/playlist-reco
-   ```
+## Spotify Setup
 
-3. Create required directories:
-   ```bash
-   mkdir -p tokens data
-   ```
+1. Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+2. Create a new application
+3. Add `http://localhost/callback` to the Redirect URIs in your app settings
+4. Copy the Client ID and Client Secret
+5. Create a `.env` file in the project root with:
+```
+SPOTIFY_CLIENT_ID=your_client_id
+SPOTIFY_CLIENT_SECRET=your_client_secret
+```
 
-4. Build the Docker image:
-   ```bash
-   docker build -t playlist-reco .
-   ```
+## Running with Docker
 
-5. Run the Docker container with environment variables and volume mounting:
-   ```bash
-   docker run -p 8501:8501 \
-     --env-file .env \
-     -v $(pwd):/app_code \
-     -v $(pwd)/tokens:/app/tokens \
-     -v $(pwd)/data:/app/data \
-     playlist-reco
-   ```
+1. Make sure you have Docker and Docker Compose installed on your system.
 
-   This command:
-   - Maps port 8501 for Streamlit
-   - Loads environment variables from .env file
-   - Mounts your current directory to /app_code in the container
-   - Mounts the tokens directory to persist OAuth tokens
-   - Mounts the data directory to persist the SQLite database
-   - Enables hot-reloading of your code changes
+2. Build and start the containers:
+```bash
+docker-compose up --build
+```
 
-6. Open your web browser and navigate to:
-   ```
-   http://localhost:8501
-   ```
+3. Access the application:
+   - Web Interface: http://localhost
+   - API Documentation: http://localhost:8000/docs
+   - API Base URL: http://localhost:8000/api
 
-### Volume Mounting Explained
+To stop the containers:
+```bash
+docker-compose down
+```
 
-The Docker run command includes three volume mounts:
-- `-v $(pwd):/app_code`: Mounts your local project directory to enable hot-reloading
-- `-v $(pwd)/tokens:/app/tokens`: Mounts the tokens directory to persist OAuth tokens
-- `-v $(pwd)/data:/app/data`: Mounts the data directory to persist the SQLite database
+## API Endpoints
 
-This ensures that:
-- Your code changes are immediately reflected
-- Your Spotify authorization persists between container restarts
-- Your artist data is stored locally and persists between restarts
-- You don't need to re-authorize the application each time
+The API is available at http://localhost:8000/api with the following endpoints:
 
-### Database Structure
+- `GET /api/artists` - Get all artists
+  - Query parameters:
+    - `status`: Filter by status (optional)
+    - Example: http://localhost:8000/api/artists?status=like
 
-The application uses SQLite to store:
-- Artist information (name, popularity, genres)
-- Artist images
-- Timestamps for data freshness
+- `PUT /api/artists/{artist_id}/status` - Update artist status
+  - Path parameters:
+    - `artist_id`: The Spotify artist ID
+  - Body:
+    ```json
+    {
+      "status": "like" | "dislike" | "neutral" | "not_ranked"
+    }
+    ```
+  - Example: http://localhost:8000/api/artists/123/status
 
-The database is automatically initialized when the application starts.
+- `GET /api/spotify/auth-url` - Get Spotify authorization URL
+  - Returns the URL to redirect users to for Spotify authentication
 
-### Viewing Docker Logs
+- `GET /api/spotify/callback` - Handle Spotify OAuth callback
+  - Query parameters:
+    - `code`: The authorization code from Spotify
+  - Loads the user's top artists and saves them to the database
 
-To view the application logs, you can use one of these methods:
-
-1. View logs of the running container:
-   ```bash
-   # Get container ID
-   docker ps
-   
-   # View logs
-   docker logs <container_id>
-   ```
-
-2. Follow logs in real-time:
-   ```bash
-   docker logs -f <container_id>
-   ```
-
-3. View last N lines of logs:
-   ```bash
-   docker logs --tail 100 <container_id>
-   ```
-
-4. View logs with timestamps:
-   ```bash
-   docker logs -t <container_id>
-   ```
+You can explore and test all API endpoints using the Swagger UI at http://localhost:8000/docs
 
 ## Development Setup
 
-1. Install UV package manager:
-   ```bash
-   pip install uv
-   ```
+### Backend
+
+1. Create a virtual environment and activate it:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
 2. Install dependencies:
-   ```bash
-   uv pip install -r requirements.txt
-   ```
+```bash
+cd backend
+pip install -r requirements.txt
+```
 
-3. Set up Spotify API credentials:
-   - Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-   - Log in with your Spotify account
-   - Click "Create App"
-   - Fill in the app details:
-     - App name: Playlist Recommender
-     - App description: A music recommendation app
-   - After creating the app, you'll get:
-     - Client ID
-     - Client Secret
-   - Create a `.env` file in the project root with:
-     ```
-     SPOTIFY_CLIENT_ID=your_client_id
-     SPOTIFY_CLIENT_SECRET=your_client_secret
-     ```
+3. Run the backend server:
+```bash
+uvicorn main:app --reload
+```
 
-4. Run the application locally:
-   ```bash
-   streamlit run main.py
-   ```
+The backend will be available at http://localhost:8000
+
+### Frontend
+
+1. Install dependencies:
+```bash
+cd frontend
+npm install
+```
+
+2. Start the development server:
+```bash
+npm start
+```
+
+The frontend will be available at http://localhost:3000
 
 ## Features
 
-- Simple web interface for playlist recommendations
-- Artist-based recommendation system
-- Modern and responsive design
-- Spotify integration for personalized recommendations
-- View your top artists from Spotify
-- Local database storage for artists
-- Persistent data between sessions 
+- Connect with Spotify to load your top artists
+- View list of artists
+- Filter artists by ranking status
+- Update artist rankings (Like, Dislike, Neutral, Not Ranked)
+- Real-time updates
+- Responsive design
+
+## Technologies Used
+
+- Frontend:
+  - React
+  - TypeScript
+  - CSS Modules
+  - Nginx
+- Backend:
+  - FastAPI
+  - SQLAlchemy
+  - Pydantic
+  - Spotify Web API
+- Infrastructure:
+  - Docker
+  - Docker Compose 
