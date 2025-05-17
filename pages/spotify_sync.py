@@ -3,18 +3,34 @@ import requests
 import os
 from dotenv import load_dotenv
 import base64
+import json
+from pathlib import Path
 
 # Load environment variables
 load_dotenv()
 
-st.set_page_config(
-    page_title="Spotify Sync",
-    page_icon="🎵",
-    layout="wide"
-)
+# Create tokens directory if it doesn't exist
+TOKENS_DIR = Path("tokens")
+TOKENS_DIR.mkdir(exist_ok=True)
 
-st.title("🎵 Spotify Sync")
-st.write("Connect your Spotify account to get personalized recommendations!")
+def save_token(token):
+    """
+    Save token to a file
+    """
+    token_file = TOKENS_DIR / "spotify_token.json"
+    with open(token_file, "w") as f:
+        json.dump({"token": token}, f)
+
+def load_token():
+    """
+    Load token from file if it exists
+    """
+    token_file = TOKENS_DIR / "spotify_token.json"
+    if token_file.exists():
+        with open(token_file, "r") as f:
+            data = json.load(f)
+            return data.get("token")
+    return None
 
 def get_auth_url():
     """
@@ -36,23 +52,37 @@ def get_auth_url():
 
 def get_top_artists(token):
     """
-    Get user's top artists from Spotify
+    Get user's top artists from Spotify using pagination
     """
     url = "https://api.spotify.com/v1/me/top/artists"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json"
     }
-    params = {
-        "limit": 50,
-        "time_range": "long_term"
-    }
     
-    response = requests.get(url, headers=headers, params=params)
-    if response.status_code == 200:
-        return response.json()["items"]
-    else:
-        raise Exception(f"Failed to get top artists: {response.text}")
+    all_artists = []
+    limit = 50  # Maximum allowed by Spotify API
+    offset = 0
+    
+    # Make 4 requests to get up to 200 artists
+    for _ in range(4):
+        params = {
+            "limit": limit,
+            "offset": offset,
+            "time_range": "long_term"
+        }
+        
+        response = requests.get(url, headers=headers, params=params)
+        if response.status_code == 200:
+            artists = response.json()["items"]
+            if not artists:  # If no more artists, break
+                break
+            all_artists.extend(artists)
+            offset += limit
+        else:
+            raise Exception(f"Failed to get top artists: {response.text}")
+    
+    return all_artists
 
 def display_artists(artists):
     """
@@ -94,8 +124,9 @@ def display_artists(artists):
         # Add a subtle divider between artists
         st.markdown("---")
 
-# Check if we have a token in session state
-if 'spotify_token' not in st.session_state:
+# Check if we have a token in the file
+token = load_token()
+if not token:
     st.warning("Please authorize the application first")
     auth_url = get_auth_url()
     st.markdown(f"[Click here to authorize Spotify]({auth_url})")
@@ -105,14 +136,16 @@ else:
         try:
             with st.spinner("Loading your top artists..."):
                 # Get and display top artists
-                artists = get_top_artists(st.session_state['spotify_token'])
+                artists = get_top_artists(token)
                 st.subheader("Your Top Artists")
                 display_artists(artists)
         except Exception as e:
             st.error(f"Error: {str(e)}")
-            # If token is invalid, remove it from session state
+            # If token is invalid, remove it from file
             if "401" in str(e):
-                del st.session_state['spotify_token']
+                token_file = TOKENS_DIR / "spotify_token.json"
+                if token_file.exists():
+                    token_file.unlink()
                 st.experimental_rerun()
 
 # Display instructions
