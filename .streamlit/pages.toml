@@ -1,12 +1,17 @@
 [[pages]]
 path = "main.py"
 name = "Home"
-icon = "🎵"
+icon = "🏠"
 
 [[pages]]
 path = "pages/spotify_sync.py"
 name = "Spotify Sync"
 icon = "🎧"
+
+[[pages]]
+path = "pages/saved_artists.py"
+name = "Saved Artists"
+icon = "📋"
 
 [[pages]]
 path = "pages/callback.py"

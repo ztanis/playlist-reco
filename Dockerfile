@@ -13,8 +13,8 @@ RUN uv venv && \
     . .venv/bin/activate && \
     uv pip install -r requirements.txt
 
-# Create a directory for the application code
-RUN mkdir -p /app_code
+# Create directories for code and data
+RUN mkdir -p /app /data
 
 # Copy the application code
 COPY . /app/

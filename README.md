@@ -11,9 +11,9 @@ A Streamlit application for music playlist recommendations.
    cd /path/to/playlist-reco
    ```
 
-3. Create a tokens directory for OAuth token persistence:
+3. Create required directories:
    ```bash
-   mkdir -p tokens
+   mkdir -p tokens data
    ```
 
 4. Build the Docker image:
@@ -27,6 +27,7 @@ A Streamlit application for music playlist recommendations.
      --env-file .env \
      -v $(pwd):/app_code \
      -v $(pwd)/tokens:/app/tokens \
+     -v $(pwd)/data:/app/data \
      playlist-reco
    ```
 
@@ -35,6 +36,7 @@ A Streamlit application for music playlist recommendations.
    - Loads environment variables from .env file
    - Mounts your current directory to /app_code in the container
    - Mounts the tokens directory to persist OAuth tokens
+   - Mounts the data directory to persist the SQLite database
    - Enables hot-reloading of your code changes
 
 6. Open your web browser and navigate to:
@@ -44,22 +46,25 @@ A Streamlit application for music playlist recommendations.
 
 ### Volume Mounting Explained
 
-The Docker run command includes two volume mounts:
+The Docker run command includes three volume mounts:
 - `-v $(pwd):/app_code`: Mounts your local project directory to enable hot-reloading
-- `-v $(pwd)/tokens:/app/tokens`: Mounts the tokens directory to persist OAuth tokens between container restarts
+- `-v $(pwd)/tokens:/app/tokens`: Mounts the tokens directory to persist OAuth tokens
+- `-v $(pwd)/data:/app/data`: Mounts the data directory to persist the SQLite database
 
 This ensures that:
 - Your code changes are immediately reflected
 - Your Spotify authorization persists between container restarts
+- Your artist data is stored locally and persists between restarts
 - You don't need to re-authorize the application each time
 
-### Token Persistence
+### Database Structure
 
-The application stores OAuth tokens in the `tokens` directory:
-- Tokens are saved in `tokens/spotify_token.json`
-- The directory is mounted to the container
-- Tokens persist between container restarts
-- The directory is gitignored for security
+The application uses SQLite to store:
+- Artist information (name, popularity, genres)
+- Artist images
+- Timestamps for data freshness
+
+The database is automatically initialized when the application starts.
 
 ### Viewing Docker Logs
 
@@ -125,7 +130,9 @@ To view the application logs, you can use one of these methods:
 ## Features
 
 - Simple web interface for playlist recommendations
-- Artist-based recommendation system (coming soon)
+- Artist-based recommendation system
 - Modern and responsive design
 - Spotify integration for personalized recommendations
-- View your top artists from Spotify 
+- View your top artists from Spotify
+- Local database storage for artists
+- Persistent data between sessions 
