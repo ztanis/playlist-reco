@@ -1,0 +1,9 @@
+[[pages]]
+path = "main.py"
+name = "Home"
+icon = "🎵"
+
+[[pages]]
+path = "pages/spotify_sync.py"
+name = "Spotify Sync"
+icon = "🎧" 

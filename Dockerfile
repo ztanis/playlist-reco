@@ -16,6 +16,9 @@ RUN uv venv && \
 # Copy the application code
 COPY . .
 
+# Create a directory for environment variables
+RUN mkdir -p /app/config
+
 # Expose the port Streamlit runs on
 EXPOSE 8501
 
