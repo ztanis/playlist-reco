@@ -6,4 +6,11 @@ icon = "🎵"
 [[pages]]
 path = "pages/spotify_sync.py"
 name = "Spotify Sync"
-icon = "🎧" 
+icon = "🎧"
+
+[[pages]]
+path = "pages/callback.py"
+name = "Spotify Callback"
+icon = "🎧"
+hidden = true
+show_in_sidebar = false 

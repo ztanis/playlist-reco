@@ -8,6 +8,7 @@ font = "sans serif"
 [server]
 enableCORS = false
 enableXsrfProtection = true
+runOnSave = true
 
 [browser]
 gatherUsageStats = false 

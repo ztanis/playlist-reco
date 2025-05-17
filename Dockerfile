@@ -13,11 +13,11 @@ RUN uv venv && \
     . .venv/bin/activate && \
     uv pip install -r requirements.txt
 
-# Copy the application code
-COPY . .
+# Create a directory for the application code
+RUN mkdir -p /app_code
 
-# Create a directory for environment variables
-RUN mkdir -p /app/config
+# Copy the application code
+COPY . /app/
 
 # Expose the port Streamlit runs on
 EXPOSE 8501
@@ -26,4 +26,4 @@ EXPOSE 8501
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Command to run the application
-CMD ["streamlit", "run", "main.py", "--server.address", "0.0.0.0"] 
+CMD ["sh", "-c", "streamlit run main.py --server.address 0.0.0.0"] 

@@ -11,28 +11,82 @@ A Streamlit application for music playlist recommendations.
    cd /path/to/playlist-reco
    ```
 
-3. Build the Docker image:
+3. Create a tokens directory for OAuth token persistence:
+   ```bash
+   mkdir -p tokens
+   ```
+
+4. Build the Docker image:
    ```bash
    docker build -t playlist-reco .
    ```
 
-4. Run the Docker container with environment variables:
+5. Run the Docker container with environment variables and volume mounting:
    ```bash
    docker run -p 8501:8501 \
-     -e SPOTIFY_CLIENT_ID=your_client_id \
-     -e SPOTIFY_CLIENT_SECRET=your_client_secret \
-     -e SPOTIFY_REDIRECT_URI=http://localhost:8501/callback \
+     --env-file .env \
+     -v $(pwd):/app_code \
+     -v $(pwd)/tokens:/app/tokens \
      playlist-reco
    ```
 
-   Alternatively, you can use a .env file:
-   ```bash
-   docker run -p 8501:8501 --env-file .env playlist-reco
-   ```
+   This command:
+   - Maps port 8501 for Streamlit
+   - Loads environment variables from .env file
+   - Mounts your current directory to /app_code in the container
+   - Mounts the tokens directory to persist OAuth tokens
+   - Enables hot-reloading of your code changes
 
-5. Open your web browser and navigate to:
+6. Open your web browser and navigate to:
    ```
    http://localhost:8501
+   ```
+
+### Volume Mounting Explained
+
+The Docker run command includes two volume mounts:
+- `-v $(pwd):/app_code`: Mounts your local project directory to enable hot-reloading
+- `-v $(pwd)/tokens:/app/tokens`: Mounts the tokens directory to persist OAuth tokens between container restarts
+
+This ensures that:
+- Your code changes are immediately reflected
+- Your Spotify authorization persists between container restarts
+- You don't need to re-authorize the application each time
+
+### Token Persistence
+
+The application stores OAuth tokens in the `tokens` directory:
+- Tokens are saved in `tokens/spotify_token.json`
+- The directory is mounted to the container
+- Tokens persist between container restarts
+- The directory is gitignored for security
+
+### Viewing Docker Logs
+
+To view the application logs, you can use one of these methods:
+
+1. View logs of the running container:
+   ```bash
+   # Get container ID
+   docker ps
+   
+   # View logs
+   docker logs <container_id>
+   ```
+
+2. Follow logs in real-time:
+   ```bash
+   docker logs -f <container_id>
+   ```
+
+3. View last N lines of logs:
+   ```bash
+   docker logs --tail 100 <container_id>
+   ```
+
+4. View logs with timestamps:
+   ```bash
+   docker logs -t <container_id>
    ```
 
 ## Development Setup
@@ -54,8 +108,6 @@ A Streamlit application for music playlist recommendations.
    - Fill in the app details:
      - App name: Playlist Recommender
      - App description: A music recommendation app
-     - Website: http://localhost:8501
-     - Redirect URI: http://localhost:8501/callback
    - After creating the app, you'll get:
      - Client ID
      - Client Secret
@@ -63,7 +115,6 @@ A Streamlit application for music playlist recommendations.
      ```
      SPOTIFY_CLIENT_ID=your_client_id
      SPOTIFY_CLIENT_SECRET=your_client_secret
-     SPOTIFY_REDIRECT_URI=http://localhost:8501/callback
      ```
 
 4. Run the application locally:
