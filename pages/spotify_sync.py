@@ -44,7 +44,7 @@ def get_top_artists(token):
         "Content-Type": "application/json"
     }
     params = {
-        "limit": 6,
+        "limit": 50,
         "time_range": "medium_term"
     }
     
@@ -56,14 +56,43 @@ def get_top_artists(token):
 
 def display_artists(artists):
     """
-    Display artists in a grid layout
+    Display artists in a table format with images
     """
-    cols = st.columns(3)
-    for idx, artist in enumerate(artists):
-        with cols[idx % 3]:
-            st.image(artist['images'][0]['url'] if artist['images'] else "https://via.placeholder.com/150")
+    # Show total number of artists
+    st.write(f"**Total Artists:** {len(artists)}")
+    
+    # Create header row
+    cols = st.columns([1, 3, 1])
+    with cols[0]:
+        st.write("**Image**")
+    with cols[1]:
+        st.write("**Artist Name**")
+    with cols[2]:
+        st.write("**Popularity**")
+    
+    # Add a divider
+    st.markdown("---")
+    
+    # Display each artist in a row
+    for artist in artists:
+        cols = st.columns([1, 3, 1])
+        with cols[0]:
+            # Display smaller image (80x80)
+            image_url = artist['images'][0]['url'] if artist['images'] else "https://via.placeholder.com/80"
+            st.image(image_url, width=80)
+        with cols[1]:
             st.write(f"**{artist['name']}**")
-            st.write(f"Popularity: {artist['popularity']}")
+            # Add genres if available
+            if artist.get('genres'):
+                st.write(f"*{', '.join(artist['genres'][:2])}*")
+        with cols[2]:
+            # Create a progress bar for popularity
+            popularity = artist['popularity']
+            st.progress(popularity / 100)
+            st.write(f"{popularity}%")
+        
+        # Add a subtle divider between artists
+        st.markdown("---")
 
 # Check if we have a token in session state
 if 'spotify_token' not in st.session_state:
