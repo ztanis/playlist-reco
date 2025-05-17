@@ -45,7 +45,7 @@ def get_top_artists(token):
     }
     params = {
         "limit": 50,
-        "time_range": "medium_term"
+        "time_range": "long_term"
     }
     
     response = requests.get(url, headers=headers, params=params)
