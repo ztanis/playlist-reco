@@ -1,15 +1,30 @@
-.App {
-  text-align: center;
+.app {
   min-height: 100vh;
   background-color: #121212;
-  color: white;
+  color: #fff;
+}
+
+.content {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Remove old styles that are no longer needed */
+.App {
+  text-align: center;
 }
 
 .App-header {
   background-color: #282c34;
   padding: 20px;
   color: white;
-  margin-bottom: 30px;
+}
+
+.artists-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 .App-header h1 {

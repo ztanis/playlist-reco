@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import ArtistList from './components/ArtistList';
-import SpotifyAuth from './components/SpotifyAuth';
+import TabBar from './components/TabBar';
+import GenerateTab from './components/GenerateTab';
 
 interface Artist {
   id: string;
@@ -17,6 +18,7 @@ interface ArtistsResponse {
 
 function App() {
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [activeTab, setActiveTab] = useState('artists');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,18 +45,20 @@ function App() {
 
   const handleStatusChange = async (artistId: string, status: string) => {
     try {
-      await fetch(`http://localhost:8000/api/artists/${artistId}/status`, {
+      const response = await fetch(`http://localhost:8000/api/artists/${artistId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ status }),
       });
-      // Refresh all artists to maintain sorting
-      fetchArtists();
-    } catch (err) {
+
+      if (response.ok) {
+        fetchArtists(); // Refresh the list
+      }
+    } catch (error) {
       setError('Failed to update artist status');
-      console.error(err);
+      console.error('Error updating status:', error);
     }
   };
 
@@ -117,16 +121,15 @@ function App() {
   }
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Spotify Artist Manager</h1>
-      </header>
-      <main>
-        <section className="artists-section">
-          <h2>Artists</h2>
+    <div className="app">
+      <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="content">
+        {activeTab === 'artists' ? (
           <ArtistList artists={artists} onStatusChange={handleStatusChange} />
-        </section>
-      </main>
+        ) : (
+          <GenerateTab />
+        )}
+      </div>
     </div>
   );
 }
