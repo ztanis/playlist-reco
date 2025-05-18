@@ -31,7 +31,7 @@ class OpenAIClient:
         self.client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         logger.info("OpenAI client initialized")
 
-    def generate_playlist(self, request: str, track_count: int = 10) -> Dict[str, any]:
+    def generate_playlist(self, request: str, track_count: int = 10, liked_artists_names: list[str] = None) -> Dict[str, any]:
         """Generate a playlist based on the user's request"""
         try:
             logger.info(f"Generating playlist for request: {request} with {track_count} tracks")
@@ -41,10 +41,13 @@ class OpenAIClient:
             logger.info(f"Model: gpt-3.5-turbo")
             logger.info(f"Temperature: 0.7")
             logger.info(f"Max tokens: 2000")
-            
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
+
+            if liked_artists_names is not None:
+                liked_artists_message = f"Consider the following artists as favorites: {', '.join(liked_artists_names)}"
+            else:
+                liked_artists_message = ""
+
+            messages = [
                     {
                         "role": "system",
                         "content": f"""You are a music expert that generates playlists based on user requests.
@@ -52,6 +55,8 @@ class OpenAIClient:
                         The playlist name should be short, catchy, and reflect the theme of the playlist.
                         Each track must have a name and artist.
                         Make sure the tracks are diverse and match the user's request.
+
+                        If favourite artists are provided consider them in the playlist, but only if they are relevant to the request.
                         
                         Important: Ensure the response is a complete, valid JSON object.
                         The response must match this exact schema:
@@ -67,14 +72,22 @@ class OpenAIClient:
                     },
                     {
                         "role": "user",
-                        "content": f"Generate a playlist of exactly {track_count} tracks based on this request: {request}"
+                        "content": f"""
+                        Generate a playlist of exactly {track_count} tracks based on this request: {request}. 
+                        {liked_artists_message}"""
                     }
-                ],
+                ]
+            
+            logger.info(f"Request for openai: {messages}")
+
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
                 temperature=0.7,
                 max_tokens=2000,
                 response_format={"type": "json_object"}
             )
-
+            
             logger.info("Received response from OpenAI API")
             
             # Extract the response content
@@ -89,6 +102,7 @@ class OpenAIClient:
                 
                 playlist_data = PlaylistResponse.model_validate_json(content)
                 tracks = [track.model_dump() for track in playlist_data.tracks]
+                tracks = tracks[:track_count]
                 logger.info(f"Successfully parsed JSON response. Number of tracks: {len(tracks)}")
             except Exception as e:
                 logger.info(f"Failed to parse JSON response: {str(e)}")

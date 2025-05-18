@@ -44,6 +44,8 @@ class SyncRequest(BaseModel):
 class GenerateRequest(BaseModel):
     request: str
     track_count: int = 10
+    consider_favorites: bool = False
+    
 
 class UploadRequest(BaseModel):
     tracks: List[Dict[str, str]]
@@ -126,7 +128,14 @@ async def update_artist_status(artist_id: str, status_update: StatusUpdate):
 @app.post("/api/playlist/generate")
 async def generate_playlist(request: GenerateRequest):
     try:
-        tracks = openai_client.generate_playlist(request.request, request.track_count)
+        if request.consider_favorites:
+            liked_artists = db.get_artists(status="like")
+            liked_artists_names = [artist['name'] for artist in liked_artists['artists']]
+            logger.info(f"Liked artists: {liked_artists_names}")
+        else:
+            liked_artists_names = None
+            
+        tracks = openai_client.generate_playlist(request.request, request.track_count, liked_artists_names)
         return {"tracks": tracks}
     except Exception as e:
         logger.error(f"Error generating playlist: {str(e)}")

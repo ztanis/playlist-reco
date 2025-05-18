@@ -9,18 +9,25 @@ const GenerateTab: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [trackCount, setTrackCount] = useState(10);
   const [playlistUrl, setPlaylistUrl] = useState<string | null>(null);
+  const [considerFavorites, setConsiderFavorites] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setPlaylistUrl(null);
     try {
+      const requestData = {
+        request,
+        track_count: trackCount,
+        consider_favorites: considerFavorites
+      };
+
       const response = await fetch('http://localhost:8000/api/playlist/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ request, track_count: trackCount }),
+        body: JSON.stringify(requestData),
       });
       const data = await response.json();
       console.log('Received data:', data); // Debug log
@@ -83,6 +90,14 @@ const GenerateTab: React.FC = () => {
             <option value={50}>50 tracks</option>
           </select>
         </div>
+        <label>
+          <input
+            type="checkbox"
+            checked={considerFavorites}
+            onChange={(e) => setConsiderFavorites(e.target.checked)}
+          />
+          Consider favorites
+        </label>
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Generating...' : 'Generate Playlist'}
         </button>
