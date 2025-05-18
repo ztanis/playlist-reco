@@ -81,9 +81,58 @@
   margin-top: 2rem;
 }
 
-.tracks-list h2 {
-  color: #1db954;
+.tracks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
+}
+
+.tracks-header h2 {
+  color: #1db954;
+  margin: 0;
+}
+
+.upload-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background-color: #1db954;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+
+.upload-button:hover {
+  background-color: #1ed760;
+}
+
+.upload-button:disabled {
+  background-color: #1db954;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.playlist-link {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.playlist-link a {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: #1db954;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.playlist-link a:hover {
+  background-color: #1ed760;
 }
 
 .track-item {

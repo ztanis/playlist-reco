@@ -2,6 +2,7 @@ import os
 import openai
 import logging
 from typing import List, Dict
+from pydantic import BaseModel, Field
 
 # Configure logging
 logging.basicConfig(
@@ -15,6 +16,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 logger.info(f"openi version: {openai.version.VERSION}") 
+
+class Track(BaseModel):
+    name: str = Field(..., description="The name of the track")
+    artist: str = Field(..., description="The name of the artist")
+
+class PlaylistResponse(BaseModel):
+    tracks: List[Track] = Field(..., min_items=1, max_items=50)
 
 class OpenAIClient:
     def __init__(self):
@@ -36,11 +44,31 @@ class OpenAIClient:
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": f"You are a music expert that generates playlists based on user requests. Return only a JSON array of exactly {track_count} objects with 'name' and 'artist' fields."},
-                    {"role": "user", "content": f"Generate a playlist of exactly {track_count} tracks based on this request: {request}"}
+                    {
+                        "role": "system",
+                        "content": f"""You are a music expert that generates playlists based on user requests.
+                        You must return a JSON object with exactly {track_count} tracks.
+                        Each track must have a name and artist.
+                        Make sure the tracks are diverse and match the user's request.
+                        
+                        The response must match this JSON schema:
+                        {{
+                            "tracks": [
+                                {{
+                                    "name": "string",
+                                    "artist": "string"
+                                }}
+                            ]
+                        }}"""
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Generate a playlist of exactly {track_count} tracks based on this request: {request}"
+                    }
                 ],
                 temperature=0.7,
-                max_tokens=500
+                max_tokens=500,
+                response_format={"type": "json_object"}
             )
 
             logger.info("Received response from OpenAI API")
@@ -49,30 +77,19 @@ class OpenAIClient:
             content = response.choices[0].message.content
             logger.info(f"Raw response content: {content}")
             
-            # Parse the JSON response
-            import json
+            # Parse the JSON response using Pydantic
             try:
-                tracks = json.loads(content)
+                playlist_data = PlaylistResponse.model_validate_json(content)
+                tracks = [track.model_dump() for track in playlist_data.tracks]
                 logger.info(f"Successfully parsed JSON response. Number of tracks: {len(tracks)}")
-            except json.JSONDecodeError as e:
+            except Exception as e:
                 logger.info(f"Failed to parse JSON response: {str(e)}")
-                raise
-            
-            # Ensure we have a list of tracks with name and artist
-            if not isinstance(tracks, list):
-                logger.info("Invalid response format: not a list")
-                raise ValueError("Invalid response format")
+                raise ValueError(f"Invalid response format: {str(e)}")
             
             # Ensure we have the correct number of tracks
             if len(tracks) != track_count:
                 logger.info(f"Invalid number of tracks: got {len(tracks)}, expected {track_count}")
                 raise ValueError(f"Invalid number of tracks: got {len(tracks)}, expected {track_count}")
-                
-            for i, track in enumerate(tracks):
-                if not isinstance(track, dict) or 'name' not in track or 'artist' not in track:
-                    logger.info(f"Invalid track format at index {i}: {track}")
-                    raise ValueError("Invalid track format")
-                logger.info(f"Valid track {i}: {track['name']} by {track['artist']}")
             
             logger.info("Successfully generated playlist")
             return tracks

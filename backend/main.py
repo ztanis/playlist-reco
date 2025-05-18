@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from lib.database import Database
 from lib.spotify_client import SpotifyClient
 from lib.openai_client import OpenAIClient
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel
 import logging
 
@@ -40,6 +40,14 @@ class PlaylistRequest(BaseModel):
 
 class SyncRequest(BaseModel):
     code: str
+
+class GenerateRequest(BaseModel):
+    request: str
+    track_count: int = 10
+
+class UploadRequest(BaseModel):
+    tracks: List[Dict[str, str]]
+    name: str
 
 @app.get("/api/spotify/auth-url")
 async def get_spotify_auth_url():
@@ -113,23 +121,34 @@ async def update_artist_status(artist_id: str, status_update: StatusUpdate):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/playlist/generate")
-async def generate_playlist(playlist_request: PlaylistRequest):
+async def generate_playlist(request: GenerateRequest):
     try:
-        # Generate playlist using OpenAI
-        tracks = openai_client.generate_playlist(playlist_request.request)
-        
-        # Get preview URLs from Spotify
-        tracks_with_previews = []
-        for track in tracks:
-            # Search for the track on Spotify
-            logger.info(f"Not Searching for track: {track['name']} by {track['artist']}")
-            tracks_with_previews.append({
-                'name': track['name'],
-                'artist': track['artist'],
-            })
-        
-        return {"tracks": tracks_with_previews}
+        tracks = openai_client.generate_playlist(request.request, request.track_count)
+        return {"tracks": tracks}
     except Exception as e:
+        logger.error(f"Error generating playlist: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/playlist/upload")
+async def upload_to_spotify(request: UploadRequest):
+    try:
+        # Search for each track and collect their Spotify IDs
+        track_ids = []
+        for track in request.tracks:
+            track_id = await spotify_client.search_track(track['name'], track['artist'])
+            if track_id:
+                track_ids.append(track_id)
+            else:
+                logger.warning(f"Could not find track: {track['name']} by {track['artist']}")
+
+        if not track_ids:
+            raise HTTPException(status_code=404, detail="No tracks found on Spotify")
+
+        # Create playlist and add tracks
+        playlist_url = await spotify_client.create_playlist(request.name, track_ids)
+        return {"playlist_url": playlist_url}
+    except Exception as e:
+        logger.error(f"Error uploading to Spotify: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

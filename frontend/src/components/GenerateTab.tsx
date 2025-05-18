@@ -5,11 +5,14 @@ const GenerateTab: React.FC = () => {
   const [request, setRequest] = useState('');
   const [tracks, setTracks] = useState<Array<{ name: string; artist: string }>>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [trackCount, setTrackCount] = useState(10);
+  const [playlistUrl, setPlaylistUrl] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setPlaylistUrl(null);
     try {
       const response = await fetch('http://localhost:8000/api/playlist/generate', {
         method: 'POST',
@@ -24,6 +27,28 @@ const GenerateTab: React.FC = () => {
       console.error('Error generating playlist:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleUploadToSpotify = async () => {
+    setIsUploading(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/playlist/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          tracks,
+          name: `AI Generated: ${request.substring(0, 50)}${request.length > 50 ? '...' : ''}`
+        }),
+      });
+      const data = await response.json();
+      setPlaylistUrl(data.playlist_url);
+    } catch (error) {
+      console.error('Error uploading to Spotify:', error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -56,7 +81,23 @@ const GenerateTab: React.FC = () => {
 
       {tracks.length > 0 && (
         <div className="tracks-list">
-          <h2>Generated Playlist</h2>
+          <div className="tracks-header">
+            <h2>Generated Playlist</h2>
+            <button 
+              className="upload-button"
+              onClick={handleUploadToSpotify}
+              disabled={isUploading}
+            >
+              {isUploading ? 'Uploading...' : 'Upload to Spotify'}
+            </button>
+          </div>
+          {playlistUrl && (
+            <div className="playlist-link">
+              <a href={playlistUrl} target="_blank" rel="noopener noreferrer">
+                Open in Spotify
+              </a>
+            </div>
+          )}
           {tracks.map((track, index) => (
             <div key={index} className="track-item">
               <div className="track-info">
