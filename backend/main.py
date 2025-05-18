@@ -122,19 +122,11 @@ async def generate_playlist(playlist_request: PlaylistRequest):
         tracks_with_previews = []
         for track in tracks:
             # Search for the track on Spotify
-            search_response = spotify_client.search_track(
-                f"{track['name']} {track['artist']}"
-            )
-            
-            if search_response and 'tracks' in search_response:
-                items = search_response['tracks'].get('items', [])
-                if items:
-                    track_info = items[0]
-                    tracks_with_previews.append({
-                        'name': track['name'],
-                        'artist': track['artist'],
-                        'preview_url': track_info.get('preview_url')
-                    })
+            logger.info(f"Not Searching for track: {track['name']} by {track['artist']}")
+            tracks_with_previews.append({
+                'name': track['name'],
+                'artist': track['artist'],
+            })
         
         return {"tracks": tracks_with_previews}
     except Exception as e:
