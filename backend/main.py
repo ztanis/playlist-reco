@@ -35,6 +35,9 @@ class StatusUpdate(BaseModel):
 class PlaylistRequest(BaseModel):
     request: str
 
+class SyncRequest(BaseModel):
+    code: str
+
 @app.get("/api/spotify/auth-url")
 async def get_spotify_auth_url():
     try:
@@ -70,15 +73,15 @@ async def spotify_callback(code: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/spotify/sync")
-async def sync_artists(code: str):
+async def sync_artists(request: SyncRequest):
     try:
         # Get access token
-        token_data = spotify_client.get_access_token(code)
+        token_data = spotify_client.get_access_token(request.code)
         if 'error' in token_data:
             raise HTTPException(status_code=400, detail=token_data['error'])
 
         # Get top artists
-        artists_data = spotify_client.get_top_artists(token_data['access_token'])
+        artists_data = spotify_client.get_top_artists()
         if 'error' in artists_data:
             raise HTTPException(status_code=400, detail=artists_data['error'])
 

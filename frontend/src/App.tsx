@@ -12,7 +12,7 @@ interface Artist {
 }
 
 interface ArtistsResponse {
-  items: Artist[];
+  artists: Artist[];
 }
 
 function App() {
@@ -32,7 +32,7 @@ function App() {
         throw new Error('Failed to fetch artists');
       }
       const data: ArtistsResponse = await response.json();
-      setArtists(data.items);
+      setArtists(data.artists);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
