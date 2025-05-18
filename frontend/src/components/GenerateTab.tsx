@@ -3,66 +3,66 @@ import './GenerateTab.css';
 
 const GenerateTab: React.FC = () => {
   const [request, setRequest] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [tracks, setTracks] = useState<Array<{ name: string; artist: string; preview_url: string | null }>>([]);
+  const [tracks, setTracks] = useState<Array<{ name: string; artist: string }>>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [trackCount, setTrackCount] = useState(10);
 
-  const handleGenerate = async () => {
-    if (!request.trim()) return;
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
     try {
-      setIsGenerating(true);
       const response = await fetch('http://localhost:8000/api/playlist/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ request }),
+        body: JSON.stringify({ request, track_count: trackCount }),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate playlist');
-      }
-
       const data = await response.json();
       setTracks(data.tracks);
     } catch (error) {
       console.error('Error generating playlist:', error);
     } finally {
-      setIsGenerating(false);
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="generate-tab">
-      <div className="generate-form">
+      <form onSubmit={handleSubmit} className="generate-form">
         <textarea
           value={request}
           onChange={(e) => setRequest(e.target.value)}
           placeholder="Describe the playlist you want to generate..."
-          rows={4}
+          required
         />
-        <button 
-          onClick={handleGenerate}
-          disabled={isGenerating || !request.trim()}
-        >
-          {isGenerating ? 'Generating...' : 'Generate Playlist'}
+        <div className="track-count-selector">
+          <label>Number of tracks:</label>
+          <select 
+            value={trackCount} 
+            onChange={(e) => setTrackCount(Number(e.target.value))}
+          >
+            <option value={10}>10 tracks</option>
+            <option value={20}>20 tracks</option>
+            <option value={30}>30 tracks</option>
+            <option value={40}>40 tracks</option>
+            <option value={50}>50 tracks</option>
+          </select>
+        </div>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? 'Generating...' : 'Generate Playlist'}
         </button>
-      </div>
+      </form>
 
       {tracks.length > 0 && (
         <div className="tracks-list">
-          <h2>Generated Tracks</h2>
+          <h2>Generated Playlist</h2>
           {tracks.map((track, index) => (
             <div key={index} className="track-item">
               <div className="track-info">
                 <span className="track-name">{track.name}</span>
                 <span className="track-artist">{track.artist}</span>
               </div>
-              {track.preview_url && (
-                <audio controls src={track.preview_url}>
-                  Your browser does not support the audio element.
-                </audio>
-              )}
             </div>
           ))}
         </div>

@@ -22,10 +22,10 @@ class OpenAIClient:
         self.client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         logger.info("OpenAI client initialized")
 
-    def generate_playlist(self, request: str) -> List[Dict[str, str]]:
+    def generate_playlist(self, request: str, track_count: int = 10) -> List[Dict[str, str]]:
         """Generate a playlist based on the user's request"""
         try:
-            logger.info(f"Generating playlist for request: {request}")
+            logger.info(f"Generating playlist for request: {request} with {track_count} tracks")
             
             # Log the API call parameters
             logger.info("Making OpenAI API call with parameters:")
@@ -36,8 +36,8 @@ class OpenAIClient:
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are a music expert that generates playlists based on user requests. Return only a JSON array of objects with 'name' and 'artist' fields."},
-                    {"role": "user", "content": f"Generate a playlist based on this request: {request}"}
+                    {"role": "system", "content": f"You are a music expert that generates playlists based on user requests. Return only a JSON array of exactly {track_count} objects with 'name' and 'artist' fields."},
+                    {"role": "user", "content": f"Generate a playlist of exactly {track_count} tracks based on this request: {request}"}
                 ],
                 temperature=0.7,
                 max_tokens=500
@@ -62,6 +62,11 @@ class OpenAIClient:
             if not isinstance(tracks, list):
                 logger.info("Invalid response format: not a list")
                 raise ValueError("Invalid response format")
+            
+            # Ensure we have the correct number of tracks
+            if len(tracks) != track_count:
+                logger.info(f"Invalid number of tracks: got {len(tracks)}, expected {track_count}")
+                raise ValueError(f"Invalid number of tracks: got {len(tracks)}, expected {track_count}")
                 
             for i, track in enumerate(tracks):
                 if not isinstance(track, dict) or 'name' not in track or 'artist' not in track:
