@@ -22,6 +22,7 @@ class Track(BaseModel):
     artist: str = Field(..., description="The name of the artist")
 
 class PlaylistResponse(BaseModel):
+    name: str = Field(..., description="A short, catchy name for the playlist")
     tracks: List[Track] = Field(..., min_items=1, max_items=50)
 
 class OpenAIClient:
@@ -30,7 +31,7 @@ class OpenAIClient:
         self.client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         logger.info("OpenAI client initialized")
 
-    def generate_playlist(self, request: str, track_count: int = 10) -> List[Dict[str, str]]:
+    def generate_playlist(self, request: str, track_count: int = 10) -> Dict[str, any]:
         """Generate a playlist based on the user's request"""
         try:
             logger.info(f"Generating playlist for request: {request} with {track_count} tracks")
@@ -39,7 +40,7 @@ class OpenAIClient:
             logger.info("Making OpenAI API call with parameters:")
             logger.info(f"Model: gpt-3.5-turbo")
             logger.info(f"Temperature: 0.7")
-            logger.info(f"Max tokens: 500")
+            logger.info(f"Max tokens: 2000")
             
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -47,12 +48,15 @@ class OpenAIClient:
                     {
                         "role": "system",
                         "content": f"""You are a music expert that generates playlists based on user requests.
-                        You must return a JSON object with exactly {track_count} tracks.
+                        You must return a valid JSON object with a playlist name and exactly {track_count} tracks.
+                        The playlist name should be short, catchy, and reflect the theme of the playlist.
                         Each track must have a name and artist.
                         Make sure the tracks are diverse and match the user's request.
                         
-                        The response must match this JSON schema:
+                        Important: Ensure the response is a complete, valid JSON object.
+                        The response must match this exact schema:
                         {{
+                            "name": "string (max 50 chars)",
                             "tracks": [
                                 {{
                                     "name": "string",
@@ -67,7 +71,7 @@ class OpenAIClient:
                     }
                 ],
                 temperature=0.7,
-                max_tokens=500,
+                max_tokens=2000,
                 response_format={"type": "json_object"}
             )
 
@@ -79,6 +83,10 @@ class OpenAIClient:
             
             # Parse the JSON response using Pydantic
             try:
+                # Ensure the response is complete JSON
+                if not content.strip().endswith('}'):
+                    raise ValueError("Incomplete JSON response")
+                
                 playlist_data = PlaylistResponse.model_validate_json(content)
                 tracks = [track.model_dump() for track in playlist_data.tracks]
                 logger.info(f"Successfully parsed JSON response. Number of tracks: {len(tracks)}")
@@ -92,7 +100,10 @@ class OpenAIClient:
                 raise ValueError(f"Invalid number of tracks: got {len(tracks)}, expected {track_count}")
             
             logger.info("Successfully generated playlist")
-            return tracks
+            return {
+                "name": playlist_data.name,
+                "tracks": tracks
+            }
 
         except Exception as e:
             logger.error(f"Error generating playlist: {str(e)}", exc_info=True)

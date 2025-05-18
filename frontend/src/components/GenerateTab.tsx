@@ -4,6 +4,7 @@ import './GenerateTab.css';
 const GenerateTab: React.FC = () => {
   const [request, setRequest] = useState('');
   const [tracks, setTracks] = useState<Array<{ name: string; artist: string }>>([]);
+  const [playlistName, setPlaylistName] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [trackCount, setTrackCount] = useState(10);
@@ -22,7 +23,15 @@ const GenerateTab: React.FC = () => {
         body: JSON.stringify({ request, track_count: trackCount }),
       });
       const data = await response.json();
-      setTracks(data.tracks);
+      console.log('Received data:', data); // Debug log
+      
+      // Handle nested tracks structure
+      if (data.tracks && data.tracks.tracks && Array.isArray(data.tracks.tracks)) {
+        setTracks(data.tracks.tracks);
+        setPlaylistName(data.tracks.name || 'Generated Playlist');
+      } else {
+        console.error('Invalid response format:', data);
+      }
     } catch (error) {
       console.error('Error generating playlist:', error);
     } finally {
@@ -40,7 +49,7 @@ const GenerateTab: React.FC = () => {
         },
         body: JSON.stringify({ 
           tracks,
-          name: `AI Generated: ${request.substring(0, 50)}${request.length > 50 ? '...' : ''}`
+          name: playlistName
         }),
       });
       const data = await response.json();
@@ -82,14 +91,16 @@ const GenerateTab: React.FC = () => {
       {tracks.length > 0 && (
         <div className="tracks-list">
           <div className="tracks-header">
-            <h2>Generated Playlist</h2>
-            <button 
-              className="upload-button"
-              onClick={handleUploadToSpotify}
-              disabled={isUploading}
-            >
-              {isUploading ? 'Uploading...' : 'Upload to Spotify'}
-            </button>
+            <div className="playlist-info">
+              <h2>{playlistName}</h2>
+              <button 
+                className="upload-button"
+                onClick={handleUploadToSpotify}
+                disabled={isUploading}
+              >
+                {isUploading ? 'Uploading...' : 'Upload to Spotify'}
+              </button>
+            </div>
           </div>
           {playlistUrl && (
             <div className="playlist-link">
