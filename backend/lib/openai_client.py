@@ -1,7 +1,7 @@
 import os
 import openai
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict
 
 # Configure logging
 logging.basicConfig(
@@ -14,46 +14,42 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+logger.info(f"openi version: {openai.version.VERSION}") 
+
 class OpenAIClient:
     def __init__(self):
-        self.api_key = os.getenv('OPENAI_API_KEY')
-        if not self.api_key:
-            raise ValueError("OPENAI_API_KEY must be set")
-        openai.api_key = self.api_key
+        self.client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-    def generate_playlist(self, request: str) -> List[Dict[str, Any]]:
-        logger.info(f"Generating playlist for request: {request}")
-        
+    def generate_playlist(self, request: str) -> List[Dict[str, str]]:
+        """Generate a playlist based on the user's request"""
         try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
                 messages=[
-                    {
-                        "role": "system",
-                        "content": """You are a music expert. Given a playlist request, 
-                        generate a list of 20 songs that match the request. For each song, 
-                        provide the song name and artist name. Format your response as a 
-                        JSON array of objects with 'name' and 'artist' fields.
-                        
-                        You will receive a list of songs that the user likes. Consider the description of the playlist more important than the list of sonts.
-                
-                        """
-                    },
-                    {
-                        "role": "user",
-                        "content": request
-                    }
+                    {"role": "system", "content": "You are a music expert that generates playlists based on user requests. Return only a JSON array of objects with 'name' and 'artist' fields."},
+                    {"role": "user", "content": f"Generate a playlist based on this request: {request}"}
                 ],
                 temperature=0.7,
-                max_tokens=1000
+                max_tokens=500
             )
+
+            # Extract the response content
+            content = response.choices[0].message.content
             
-            # Parse the response to get the list of tracks
-            tracks = eval(response.choices[0].message.content)
-            logger.info(f"Generated {len(tracks)} tracks")
+            # Parse the JSON response
+            import json
+            tracks = json.loads(content)
+            
+            # Ensure we have a list of tracks with name and artist
+            if not isinstance(tracks, list):
+                raise ValueError("Invalid response format")
+                
+            for track in tracks:
+                if not isinstance(track, dict) or 'name' not in track or 'artist' not in track:
+                    raise ValueError("Invalid track format")
             
             return tracks
-            
+
         except Exception as e:
             logger.error(f"Error generating playlist: {str(e)}")
             raise 
