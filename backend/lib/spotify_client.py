@@ -12,41 +12,35 @@ class SpotifyClient:
         self.client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
         self.redirect_uri = os.getenv('SPOTIFY_REDIRECT_URI')
         self.token_manager = TokenManager()
-        self._init_spotify()
+        
 
     def _init_spotify(self):
         """Initialize Spotify client with current token"""
         token_data = self.token_manager.get_token()
         if token_data and 'access_token' in token_data:
+            logger.info(f"initializing spotify with token {token_data['access_token']}")
             self.sp = spotipy.Spotify(auth=token_data['access_token'])
         else:
-            self.sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-                client_id=self.client_id,
-                client_secret=self.client_secret,
-                redirect_uri=self.redirect_uri,
-                scope='playlist-modify-public playlist-modify-private'
-            ))
+            raise Exception("No token found")
 
     def get_auth_url(self):
         """Get Spotify authorization URL"""
-        auth_manager = SpotifyOAuth(
+ 
+        return self.get_auth_manager().get_authorize_url()
+
+    def get_auth_manager(self):
+        return SpotifyOAuth(
             client_id=self.client_id,
             client_secret=self.client_secret,
             redirect_uri=self.redirect_uri,
-            scope='playlist-modify-public playlist-modify-private'
+            scope='playlist-modify-public playlist-modify-private user-top-read'
         )
-        return auth_manager.get_authorize_url()
-
-    def get_access_token(self):
+    
+    def get_access_token(self, code: str):
         """Exchange authorization code for access token"""
         try:
-            auth_manager = SpotifyOAuth(
-                client_id=self.client_id,
-                client_secret=self.client_secret,
-                redirect_uri=self.redirect_uri,
-                scope='playlist-modify-public playlist-modify-private'
-            )
-            token_info = auth_manager.get_access_token()
+            
+            token_info = self.get_auth_manager().get_access_token(code)
             logger.info(f"save token with {token_info}")
             if token_info:
                 self.token_manager.save_token(token_info)

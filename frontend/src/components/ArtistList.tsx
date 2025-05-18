@@ -25,49 +25,24 @@ const ArtistList: React.FC<ArtistListProps> = ({ artists, onStatusChange }) => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
 
-  useEffect(() => {
-    // Check if we're returning from Spotify auth
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    
-    if (code) {
-      const syncArtists = async () => {
-        try {
-          setIsSyncing(true);
-          const response = await fetch('http://localhost:8000/api/spotify/sync', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ code }),
-          });
-          
-          if (!response.ok) {
-            throw new Error('Failed to sync artists');
-          }
-          
-          // Remove the code from URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-          // Reload the page to show the updated artists
-          window.location.reload();
-        } catch (error) {
-          console.error('Error syncing artists:', error);
-          setIsSyncing(false);
-        }
-      };
-      
-      syncArtists();
-    }
-  }, []);
-
   const handleSync = async () => {
     try {
       setIsSyncing(true);
-      const response = await fetch('http://localhost:8000/api/spotify/auth-url');
-      const data = await response.json();
-      window.location.href = data.auth_url;
+      const response = await fetch('http://localhost:8000/api/spotify/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to sync artists');
+      }
+      
+      // Reload the page to show the updated artists
+      window.location.reload();
     } catch (error) {
-      console.error('Error getting auth URL:', error);
+      console.error('Error syncing artists:', error);
       setIsSyncing(false);
     }
   };

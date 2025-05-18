@@ -59,15 +59,18 @@ async def get_spotify_auth_url():
 
 @app.get("/api/spotify/callback")
 async def spotify_callback(code: str):
+    logger.info(f"CALLBACK")
     try:
         # Get access token
-        
+        logger.info(f"getting access token")
+        access_token = spotify_client.get_access_token(code)
+        logger.info(f"access_token: {access_token}")
         return {"message": "Token loaded successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/spotify/sync")
-async def sync_artists(request: SyncRequest):
+async def sync_artists():
     #try:
     existing_artists = db.get_artists()
     logger.info(existing_artists)
