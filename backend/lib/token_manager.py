@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class TokenManager:
     def __init__(self):
-        self.tokens_dir = Path("tokens")
+        self.tokens_dir = Path("/app/tokens")
         self.token_file = self.tokens_dir / "spotify_token.json"
         self._ensure_tokens_dir()
 

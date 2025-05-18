@@ -53,10 +53,7 @@ async def get_spotify_auth_url():
 async def spotify_callback(code: str):
     try:
         # Get access token
-        token_data = spotify_client.get_access_token(code)
-        if 'error' in token_data:
-            raise HTTPException(status_code=400, detail=token_data['error'])
-
+        
         return {"message": "Token loaded successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -68,11 +65,6 @@ async def sync_artists(request: SyncRequest):
     logger.info(existing_artists)
     existing_artist_ids = {artist['id'] for artist in existing_artists['artists']}
 
-    # Get access token
-    #we still need to have access token
-    token_data = spotify_client.get_access_token(request.code)
-    if 'error' in token_data:
-        raise HTTPException(status_code=400, detail=token_data['error'])
 
     # Get top artists
     artists_data = spotify_client.get_top_artists()

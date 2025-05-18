@@ -37,7 +37,7 @@ class SpotifyClient:
         )
         return auth_manager.get_authorize_url()
 
-    def get_access_token(self, code):
+    def get_access_token(self):
         """Exchange authorization code for access token"""
         try:
             auth_manager = SpotifyOAuth(
@@ -46,7 +46,7 @@ class SpotifyClient:
                 redirect_uri=self.redirect_uri,
                 scope='playlist-modify-public playlist-modify-private user-top-read'
             )
-            token_info = auth_manager.get_access_token(code)
+            token_info = auth_manager.get_access_token()
             logger.info(f"save token with {token_info}")
             if token_info:
                 self.token_manager.save_token(token_info)
