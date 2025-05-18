@@ -5,6 +5,9 @@ from lib.spotify_client import SpotifyClient
 from lib.openai_client import OpenAIClient
 from typing import List, Optional
 from pydantic import BaseModel
+import logging
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -54,50 +57,48 @@ async def spotify_callback(code: str):
         if 'error' in token_data:
             raise HTTPException(status_code=400, detail=token_data['error'])
 
-        # Get top artists
-        artists_data = spotify_client.get_top_artists(token_data['access_token'])
-        if 'error' in artists_data:
-            raise HTTPException(status_code=400, detail=artists_data['error'])
-
-        # Save artists to database
-        for artist in artists_data['items']:
-            db.add_artist({
-                'id': artist['id'],
-                'name': artist['name'],
-                'popularity': artist['popularity'],
-                'images': artist['images']
-            })
-
-        return {"message": "Artists loaded successfully"}
+        return {"message": "Token loaded successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/spotify/sync")
 async def sync_artists(request: SyncRequest):
-    try:
-        # Get access token
-        token_data = spotify_client.get_access_token(request.code)
-        if 'error' in token_data:
-            raise HTTPException(status_code=400, detail=token_data['error'])
+    #try:
+    existing_artists = db.get_artists()
+    logger.info(existing_artists)
+    existing_artist_ids = {artist['id'] for artist in existing_artists['artists']}
 
-        # Get top artists
-        artists_data = spotify_client.get_top_artists()
-        if 'error' in artists_data:
-            raise HTTPException(status_code=400, detail=artists_data['error'])
+    # Get access token
+    #we still need to have access token
+    token_data = spotify_client.get_access_token(request.code)
+    if 'error' in token_data:
+        raise HTTPException(status_code=400, detail=token_data['error'])
 
-        # Clear existing artists and save new ones
-        db.clear_artists()
-        for artist in artists_data['items']:
+    # Get top artists
+    artists_data = spotify_client.get_top_artists()
+    if 'error' in artists_data:
+        raise HTTPException(status_code=400, detail=artists_data['error'])
+
+
+
+    # Add only new artists
+    new_artists_count = 0
+    for artist in artists_data['items']:
+        if artist['id'] not in existing_artist_ids:
             db.add_artist({
                 'id': artist['id'],
                 'name': artist['name'],
                 'popularity': artist['popularity'],
                 'images': artist['images']
             })
+            new_artists_count += 1
+            logger.info(f"Added new artist: {artist['name']}")
 
-        return {"message": f"Successfully synced {len(artists_data['items'])} artists"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "message": f"Sync completed: {new_artists_count} new artists added, {len(existing_artists)} existing artists preserved"
+    }
+    #except Exception as e:
+    #    raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/artists")
 async def get_artists(
